@@ -235,7 +235,7 @@
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{# Import Data}
+\CommentTok{# setups}
 \NormalTok{test =}\StringTok{ }\KeywordTok{read_csv}\NormalTok{(}\StringTok{"./data/solubility_test.csv"}\NormalTok{) }\OperatorTok{%>%}
 \StringTok{  }\NormalTok{janitor}\OperatorTok{::}\KeywordTok{clean_names}\NormalTok{() }\OperatorTok{%>%}\StringTok{ }
 \StringTok{  }\KeywordTok{na.omit}\NormalTok{()}
@@ -258,16 +258,19 @@
 \NormalTok{train =}\StringTok{ }\KeywordTok{read.csv}\NormalTok{(}\StringTok{"./data/solubility_train.csv"}\NormalTok{) }\OperatorTok{%>%}
 \StringTok{  }\NormalTok{janitor}\OperatorTok{::}\KeywordTok{clean_names}\NormalTok{() }\OperatorTok{%>%}\StringTok{ }
 \StringTok{  }\KeywordTok{na.omit}\NormalTok{()}
+
+\NormalTok{xtrain =}\StringTok{ }\KeywordTok{model.matrix}\NormalTok{(solubility }\OperatorTok{~}\NormalTok{., train)[,}\OperatorTok{-}\DecValTok{1}\NormalTok{]}
+\NormalTok{ytrain =}\StringTok{ }\NormalTok{train}\OperatorTok{$}\NormalTok{solubility}
 \end{Highlighting}
 \end{Shaded}
 
-\hypertarget{question-1-fit-a-linear-model-using-least-squares}{%
-\section{Question 1: Fit a linear model using least
-squares}\label{question-1-fit-a-linear-model-using-least-squares}}
+\hypertarget{question-1-linear-model}{%
+\section{Question 1: Linear model}\label{question-1-linear-model}}
 
 \begin{Shaded}
 \begin{Highlighting}[]
 \KeywordTok{set.seed}\NormalTok{(}\DecValTok{1}\NormalTok{)}
+
 \NormalTok{fit_lm =}\StringTok{ }\KeywordTok{lm}\NormalTok{(solubility }\OperatorTok{~}\NormalTok{., }\DataTypeTok{data =}\NormalTok{ train)}
 \KeywordTok{summary}\NormalTok{(fit_lm)}
 \end{Highlighting}
@@ -524,7 +527,7 @@ squares}\label{question-1-fit-a-linear-model-using-least-squares}}
 \begin{Shaded}
 \begin{Highlighting}[]
 \NormalTok{fit_lm_test =}\StringTok{ }\KeywordTok{predict}\NormalTok{(fit_lm, }\DataTypeTok{data =}\NormalTok{ test)}
-\NormalTok{mse =}\StringTok{ }\KeywordTok{mean}\NormalTok{((test}\OperatorTok{$}\NormalTok{solubility }\OperatorTok{-}\StringTok{ }\NormalTok{fit_lm_test)}\OperatorTok{^}\DecValTok{2}\NormalTok{)}
+\NormalTok{mse_lm =}\StringTok{ }\KeywordTok{mean}\NormalTok{((test}\OperatorTok{$}\NormalTok{solubility }\OperatorTok{-}\StringTok{ }\NormalTok{fit_lm_test)}\OperatorTok{^}\DecValTok{2}\NormalTok{)}
 \end{Highlighting}
 \end{Shaded}
 
@@ -535,7 +538,7 @@ squares}\label{question-1-fit-a-linear-model-using-least-squares}}
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{mse}
+\NormalTok{mse_lm}
 \end{Highlighting}
 \end{Shaded}
 
@@ -543,8 +546,126 @@ squares}\label{question-1-fit-a-linear-model-using-least-squares}}
 ## [1] 8.915445
 \end{verbatim}
 
-\hypertarget{question-2-fit-a-ridge-regression-model}{%
-\section{Question 2: Fit a ridge regression
-model}\label{question-2-fit-a-ridge-regression-model}}
+\hypertarget{question-2-ridge-regression-model}{%
+\section{Question 2: Ridge regression
+model}\label{question-2-ridge-regression-model}}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{set.seed}\NormalTok{(}\DecValTok{1}\NormalTok{)}
+
+\CommentTok{# Cross Validation}
+\NormalTok{cv.ridge =}\StringTok{ }\KeywordTok{cv.glmnet}\NormalTok{(xtrain, ytrain, }
+                     \DataTypeTok{type.measure =} \StringTok{"mse"}\NormalTok{,}
+                     \DataTypeTok{alpha =} \DecValTok{0}\NormalTok{,}
+                     \DataTypeTok{lambda =} \KeywordTok{exp}\NormalTok{(}\KeywordTok{seq}\NormalTok{(}\OperatorTok{-}\DecValTok{10}\NormalTok{, }\DecValTok{5}\NormalTok{, }\DataTypeTok{length =} \DecValTok{1000}\NormalTok{)))}
+\KeywordTok{plot}\NormalTok{(cv.ridge)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{hw1_files/figure-latex/unnamed-chunk-4-1.pdf}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{cv.ridge}\OperatorTok{$}\NormalTok{lambda.min }\CommentTok{# min MSE}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] 0.06504131
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{cv.ridge}\OperatorTok{$}\NormalTok{lambda}\FloatTok{.1}\NormalTok{se }\CommentTok{# 1se}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] 0.2588902
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ridge =}\StringTok{ }\KeywordTok{glmnet}\NormalTok{(xtrain, ytrain, }
+               \DataTypeTok{standardize =} \OtherTok{TRUE}\NormalTok{,}
+               \DataTypeTok{alpha =} \DecValTok{0}\NormalTok{,}
+               \DataTypeTok{lambda =}\NormalTok{ cv.ridge}\OperatorTok{$}\NormalTok{lambda.min)}
+\NormalTok{final_ridge =}\StringTok{ }\KeywordTok{predict}\NormalTok{(ridge, }\DataTypeTok{newx =} \KeywordTok{model.matrix}\NormalTok{(solubility }\OperatorTok{~}\NormalTok{., test)[,}\OperatorTok{-}\DecValTok{1}\NormalTok{], }\DataTypeTok{s =}\NormalTok{ cv.ridge}\OperatorTok{$}\NormalTok{lambda.min, }\DataTypeTok{type =} \StringTok{"response"}\NormalTok{)}
+\NormalTok{mse_ridge =}\StringTok{ }\KeywordTok{mean}\NormalTok{(final_ridge }\OperatorTok{-}\StringTok{ }\NormalTok{test}\OperatorTok{$}\NormalTok{solubility)}\OperatorTok{^}\DecValTok{2}
+\NormalTok{mse_ridge}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] 0.0004816
+\end{verbatim}
+
+\hypertarget{question-3-lasso-model}{%
+\section{Question 3: Lasso Model}\label{question-3-lasso-model}}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{set.seed}\NormalTok{(}\DecValTok{1}\NormalTok{)}
+
+\NormalTok{cv.lasso =}\StringTok{ }\KeywordTok{cv.glmnet}\NormalTok{(xtrain, ytrain, }
+                     \DataTypeTok{type.measure =} \StringTok{"mse"}\NormalTok{,}
+                     \DataTypeTok{alpha =} \DecValTok{1}\NormalTok{,}
+                     \DataTypeTok{lambda =} \KeywordTok{exp}\NormalTok{(}\KeywordTok{seq}\NormalTok{(}\OperatorTok{-}\DecValTok{10}\NormalTok{, }\DecValTok{3}\NormalTok{, }\DataTypeTok{length =} \DecValTok{1000}\NormalTok{)))}
+\KeywordTok{plot}\NormalTok{(cv.lasso)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{hw1_files/figure-latex/unnamed-chunk-5-1.pdf}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{cv.lasso}\OperatorTok{$}\NormalTok{lambda.min }\CommentTok{# min MSE}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] 0.0046664
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{cv.lasso}\OperatorTok{$}\NormalTok{lambda}\FloatTok{.1}\NormalTok{se }\CommentTok{# 1se}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] 0.02111318
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{lasso =}\StringTok{ }\KeywordTok{glmnet}\NormalTok{(xtrain, ytrain, }
+               \DataTypeTok{standardize =} \OtherTok{TRUE}\NormalTok{,}
+               \DataTypeTok{alpha =} \DecValTok{1}\NormalTok{,}
+               \DataTypeTok{lambda =}\NormalTok{ cv.lasso}\OperatorTok{$}\NormalTok{lambda.min)}
+\NormalTok{final_lasso =}\StringTok{ }\KeywordTok{predict}\NormalTok{(lasso, }\DataTypeTok{newx =} \KeywordTok{model.matrix}\NormalTok{(solubility }\OperatorTok{~}\NormalTok{., test)[,}\OperatorTok{-}\DecValTok{1}\NormalTok{], }\DataTypeTok{s =}\NormalTok{ cv.lasso}\OperatorTok{$}\NormalTok{lambda.min, }\DataTypeTok{type =} \StringTok{"response"}\NormalTok{)}
+\NormalTok{mse_lasso =}\StringTok{ }\KeywordTok{mean}\NormalTok{(final_lasso }\OperatorTok{-}\StringTok{ }\NormalTok{test}\OperatorTok{$}\NormalTok{solubility)}\OperatorTok{^}\DecValTok{2}
+\NormalTok{mse_lasso}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] 0.00109426
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{sum}\NormalTok{(final_lasso}\OperatorTok{!=}\DecValTok{0}\NormalTok{) }\CommentTok{# non-zero coefficients}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] 316
+\end{verbatim}
+
+\hypertarget{question-4-principle-component-regression-model}{%
+\section{Question 4: Principle Component Regression
+Model}\label{question-4-principle-component-regression-model}}
 
 \end{document}

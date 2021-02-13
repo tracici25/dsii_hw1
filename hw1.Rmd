@@ -14,7 +14,7 @@ library(pls)
 ```
 
 ```{r}
-# Import Data
+# setups
 test = read_csv("./data/solubility_test.csv") %>%
   janitor::clean_names() %>% 
   na.omit()
@@ -22,22 +22,72 @@ test = read_csv("./data/solubility_test.csv") %>%
 train = read.csv("./data/solubility_train.csv") %>%
   janitor::clean_names() %>% 
   na.omit()
+
+xtrain = model.matrix(solubility ~., train)[,-1]
+ytrain = train$solubility
+
 ```
 
-# Question 1: Fit a linear model using least squares
+# Question 1: Linear model
 ```{r}
 set.seed(1)
+
 fit_lm = lm(solubility ~., data = train)
 summary(fit_lm)
 fit_lm_test = predict(fit_lm, data = test)
-mse = mean((test$solubility - fit_lm_test)^2)
-mse
+mse_lm = mean((test$solubility - fit_lm_test)^2)
+mse_lm
+
 ```
 
-# Question 2: Fit a ridge regression model
+# Question 2: Ridge regression model
+```{r}
+set.seed(1)
+
+# Cross Validation
+cv.ridge = cv.glmnet(xtrain, ytrain, 
+                     type.measure = "mse",
+                     alpha = 0,
+                     lambda = exp(seq(-10, 5, length = 1000)))
+plot(cv.ridge)
+cv.ridge$lambda.min # min MSE
+cv.ridge$lambda.1se # 1se
+ridge = glmnet(xtrain, ytrain, 
+               standardize = TRUE,
+               alpha = 0,
+               lambda = cv.ridge$lambda.min)
+final_ridge = predict(ridge, newx = model.matrix(solubility ~., test)[,-1], s = cv.ridge$lambda.min, type = "response")
+mse_ridge = mean(final_ridge - test$solubility)^2
+mse_ridge
+```
+
+# Question 3: Lasso Model
+```{r}
+set.seed(1)
+
+cv.lasso = cv.glmnet(xtrain, ytrain, 
+                     type.measure = "mse",
+                     alpha = 1,
+                     lambda = exp(seq(-10, 3, length = 1000)))
+plot(cv.lasso)
+cv.lasso$lambda.min # min MSE
+cv.lasso$lambda.1se # 1se
+lasso = glmnet(xtrain, ytrain, 
+               standardize = TRUE,
+               alpha = 1,
+               lambda = cv.lasso$lambda.min)
+final_lasso = predict(lasso, newx = model.matrix(solubility ~., test)[,-1], s = cv.lasso$lambda.min, type = "response")
+mse_lasso = mean(final_lasso - test$solubility)^2
+mse_lasso
+sum(final_lasso!=0) # non-zero coefficients
+```
+
+# Question 4: Principle Component Regression Model
 ```{r}
 
 ```
+
+
 
 
 
