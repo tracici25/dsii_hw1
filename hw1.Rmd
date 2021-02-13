@@ -3,26 +3,47 @@ title: "DSII HW1"
 output: pdf_document
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+```{r}
+library(tidyverse)
+library(ISLR)
+library(glmnet)
+library(caret)
+library(corrplot)
+library(plotmo)
+library(pls)
 ```
 
-## R Markdown
+```{r}
+# Import Data
+test = read_csv("./data/solubility_test.csv") %>%
+  janitor::clean_names() %>% 
+  na.omit()
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
+train = read.csv("./data/solubility_train.csv") %>%
+  janitor::clean_names() %>% 
+  na.omit()
 ```
 
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
+# Question 1: Fit a linear model using least squares
+```{r}
+set.seed(1)
+fit_lm = lm(solubility ~., data = train)
+summary(fit_lm)
+fit_lm_test = predict(fit_lm, data = test)
+mse = mean((test$solubility - fit_lm_test)^2)
+mse
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+# Question 2: Fit a ridge regression model
+```{r}
+
+```
+
+
+
+
+
+
+
+
+
