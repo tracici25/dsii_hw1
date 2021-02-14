@@ -92,22 +92,47 @@ MSE of Lasso Regression is `r mse_lasso`. The number of non-zero coefficient est
 ```{r}
 set.seed(1)
 pcr = pcr(solubility ~., data = train, scale = TRUE, validation = "CV")
-summary(pcr) # n of components = 228
 validationplot(pcr, val.type = "MSEP")
-final_pcr = predict(pcr, newdata = test, ncomp = 228)
+pcr_cv = RMSEP(pcr)
+mcomp = which.min(pcr_cv$val[1,,]) - 1
+final_pcr = predict(pcr, newdata = test, ncomp = mcomp)
 mse_pcr = mean((final_pcr - test$solubility)^2)
 mse_pcr
 ```
 
-MSE of PCR is `r mse_pcr`, wit M selected as 228.
+MSE of PCR is `r mse_pcr`, with M selected as `r mcomp`.
 
 # Question 5
 ```{r}
 data.frame(mse_lm, mse_ridge, mse_lasso, mse_pcr)
 ```
 
-To make the results comparable, MSE is selected to be the criteria of test error. Based on the table above, Lasso model has the least MSE, therefore, Lasso is preferred to predict solubility.
+To make the results comparable, MSE is selected to be the criteria of test error. Based on the table above, Lasso model has the least MSE, therefore, Lasso is preferred to predict solubility. Furthermore, RMSE is also generated below:
 
+```{r warning = FALSE}
+ctrl1 = trainControl(method = "repeatedcv", number = 10, repeats = 5, selectionFunction = "best")
+set.seed(1)
+lm_fit = train(xtrain, ytrain, method = "lm", trControl = ctrl1)
+ridge_fit = train(xtrain, ytrain,
+                  method = "glmnet",
+                  tuneGrid = expand.grid(alpha = 0, lambda = exp(seq(-10, 5, length = 1000))),
+                  preProc = c("center", "scale"),
+                  trControl = ctrl1)
+lasso_fit = train(xtrain, ytrain, 
+                  method = "glmnet", 
+                  tuneGrid = expand.grid(alpha = 1, lambda = exp(seq(-10, 3, length = 1000))),
+                  trControl = ctrl1)
+pcr_fit = train(xtrain, ytrain,
+                method = "pcr",
+                tuneGrid = data.frame(ncomp = 1:228),
+                trControl = ctrl1,
+                preProc = c("center", "scale"))
+resample = resamples(list(linear = lm_fit, ridge = ridge_fit, lasso = lasso_fit, pcr = pcr_fit))
+summary(resample)
+bwplot(resample, metric = "RMSE")
+```
+
+From the above boxplot, it is shown Lasso model has the least RMSE. Therefore, it strengthens the conclusion that Lasso is preferred to fit the dataset.
 
 
 
