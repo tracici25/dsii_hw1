@@ -32,10 +32,10 @@ ytrain = train$solubility
 ```{r}
 set.seed(1)
 
-fit_lm = lm(solubility ~., data = train)
-summary(fit_lm)
-fit_lm_test = predict(fit_lm, data = test)
-mse_lm = mean((test$solubility - fit_lm_test)^2)
+lm_fit = lm(solubility ~., data = train)
+summary(lm_fit)
+final_lm = predict(lm_fit, newdata = test)
+mse_lm = mean((final_lm - test$solubility)^2)
 mse_lm
 
 ```
@@ -57,7 +57,7 @@ ridge = glmnet(xtrain, ytrain,
                alpha = 0,
                lambda = cv.ridge$lambda.min)
 final_ridge = predict(ridge, newx = model.matrix(solubility ~., test)[,-1], s = cv.ridge$lambda.min, type = "response")
-mse_ridge = mean(final_ridge - test$solubility)^2
+mse_ridge = mean((final_ridge - test$solubility)^2)
 mse_ridge
 ```
 
@@ -77,18 +77,28 @@ lasso = glmnet(xtrain, ytrain,
                alpha = 1,
                lambda = cv.lasso$lambda.min)
 final_lasso = predict(lasso, newx = model.matrix(solubility ~., test)[,-1], s = cv.lasso$lambda.min, type = "response")
-mse_lasso = mean(final_lasso - test$solubility)^2
+mse_lasso = mean((final_lasso - test$solubility)^2)
 mse_lasso
 sum(final_lasso!=0) # non-zero coefficients
 ```
 
 # Question 4: Principle Component Regression Model
 ```{r}
-
+set.seed(1)
+pcr = pcr(solubility ~., data = train, scale = TRUE, validation = "CV")
+summary(pcr) # n of components = 228
+validationplot(pcr, val.type = "MSEP")
+final_pcr = predict(pcr, newdata = test, ncomp = 228)
+mse_pcr = mean((final_pcr - test$solubility)^2)
+mse_pcr
 ```
 
+# Question 5
+```{r}
+data.frame(mse_lm, mse_ridge, mse_lasso, mse_pcr)
+```
 
-
+Based on the table above, Lasso model has the least MSE, therefore, Lasso is preferred to predict solubility.
 
 
 
