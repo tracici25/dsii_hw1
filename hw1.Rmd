@@ -1,9 +1,9 @@
 ---
 title: "DSII HW1"
-output: pdf_document
+output: github_document
 ---
 
-```{r}
+```{r, echo=FALSE, message=FALSE}
 library(tidyverse)
 library(ISLR)
 library(glmnet)
@@ -13,7 +13,7 @@ library(plotmo)
 library(pls)
 ```
 
-```{r}
+```{r, echo = F}
 # setups
 test = read_csv("./data/solubility_test.csv") %>%
   janitor::clean_names() %>% 
