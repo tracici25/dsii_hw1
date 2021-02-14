@@ -3,7 +3,7 @@ title: "DSII HW1"
 output: github_document
 ---
 
-```{r, echo=FALSE, message=FALSE}
+```{r message = FALSE}
 library(tidyverse)
 library(ISLR)
 library(glmnet)
@@ -13,8 +13,9 @@ library(plotmo)
 library(pls)
 ```
 
-```{r, echo = F}
+```{r message = FALSE}
 # setups
+
 test = read_csv("./data/solubility_test.csv") %>%
   janitor::clean_names() %>% 
   na.omit()
@@ -33,12 +34,13 @@ ytrain = train$solubility
 set.seed(1)
 
 lm_fit = lm(solubility ~., data = train)
-summary(lm_fit)
 final_lm = predict(lm_fit, newdata = test)
 mse_lm = mean((final_lm - test$solubility)^2)
 mse_lm
 
 ```
+
+MSE of the linear model fitting on the training data is `r mse_lm`.
 
 # Question 2: Ridge regression model
 ```{r}
@@ -61,6 +63,8 @@ mse_ridge = mean((final_ridge - test$solubility)^2)
 mse_ridge
 ```
 
+MSE of Ridge model is `r mse_ridge`.
+
 # Question 3: Lasso Model
 ```{r}
 set.seed(1)
@@ -82,6 +86,8 @@ mse_lasso
 sum(final_lasso!=0) # non-zero coefficients
 ```
 
+MSE of Lasso Regression is `r mse_lasso`. The number of non-zero coefficient estimates is `r sum(final_lasso!=0)`.
+
 # Question 4: Principle Component Regression Model
 ```{r}
 set.seed(1)
@@ -93,12 +99,14 @@ mse_pcr = mean((final_pcr - test$solubility)^2)
 mse_pcr
 ```
 
+MSE of PCR is `r mse_pcr`, wit M selected as 228.
+
 # Question 5
 ```{r}
 data.frame(mse_lm, mse_ridge, mse_lasso, mse_pcr)
 ```
 
-Based on the table above, Lasso model has the least MSE, therefore, Lasso is preferred to predict solubility.
+To make the results comparable, MSE is selected to be the criteria of test error. Based on the table above, Lasso model has the least MSE, therefore, Lasso is preferred to predict solubility.
 
 
 
